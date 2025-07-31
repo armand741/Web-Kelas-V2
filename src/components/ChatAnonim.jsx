@@ -193,8 +193,8 @@ function Chat() {
         console.error("Error sending message:", error);
         Swal.fire({
           icon: "error",
-          title: "Error",
-          text: "Failed to send message.",
+          title: "Error sending message",
+          text: error.message || "Failed to send message.",
           customClass: {
             container: "sweet-alert-container",
           },
