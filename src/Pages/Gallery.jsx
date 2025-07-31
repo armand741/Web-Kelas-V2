@@ -4,7 +4,7 @@ import "slick-carousel/slick/slick.css"
 import "slick-carousel/slick/slick-theme.css"
 import ButtonSend from "../components/ButtonSend"
 import ButtonRequest from "../components/ButtonRequest"
-import { getStorage, ref, listAll, getDownloadURL } from "firebase/storage"
+import { supabase } from "../supabase"
 import Modal from "@mui/material/Modal"
 import { Box, IconButton } from "@mui/material"
 import CloseIcon from "@mui/icons-material/Close"
@@ -20,29 +20,39 @@ const Carousel = () => {
 		config: { duration: 300 }, // Adjust the duration as needed
 	})
 
-	// Fungsi untuk mengambil daftar gambar dari Firebase Storage
-	const fetchImagesFromFirebase = async () => {
+	// Fungsi untuk mengambil daftar gambar dari Supabase Storage
+	const fetchImagesFromSupabase = async () => {
 		try {
-			const storage = getStorage() // Mendapatkan referensi Firebase Storage
-			const storageRef = ref(storage, "GambarAman/") // Menggunakan ref dengan storage
-
-			const imagesList = await listAll(storageRef) // Menggunakan listAll untuk mendapatkan daftar gambar
+			const { data, error } = await supabase.storage.from("gambaraman").list("", {
+				limit: 100,
+				offset: 0,
+				sortBy: { column: "name", order: "asc" },
+			})
+			if (error) throw error
 
 			const imageURLs = await Promise.all(
-				imagesList.items.map(async (item) => {
-					const url = await getDownloadURL(item) // Menggunakan getDownloadURL untuk mendapatkan URL gambar
-					return url
+				data.map(async (item) => {
+					const { data: urlData, error: urlError } = await supabase.storage
+						.from("gambaraman")
+						.getPublicUrl(item.name)
+					if (urlError) throw urlError
+					return urlData.publicUrl
 				}),
 			)
 
 			setImages(imageURLs)
 		} catch (error) {
-			console.error("Error fetching images from Firebase Storage:", error)
+			console.error("Error fetching images from Supabase Storage:", error)
 		}
 	}
 
 	useEffect(() => {
-		fetchImagesFromFirebase()
+		fetchImagesFromSupabase()
+		const interval = setInterval(() => {
+			fetchImagesFromSupabase()
+		}, 30000) // Poll every 30 seconds
+
+		return () => clearInterval(interval)
 	}, [])
 
 	const settings = {

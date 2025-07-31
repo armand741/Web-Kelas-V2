@@ -43,8 +43,8 @@ function Chat() {
       });
 
     const realtimeSubscription = supabase
-      .from("chats")
-      .on("INSERT", (payload) => {
+      .channel('public:chats')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats' }, (payload) => {
         setMessages((prevMessages) => [...prevMessages, payload.new]);
         if (shouldScrollToBottom) {
           scrollToBottom();
@@ -53,7 +53,7 @@ function Chat() {
       .subscribe();
 
     return () => {
-      supabase.removeSubscription(realtimeSubscription);
+      supabase.removeChannel(realtimeSubscription);
     };
   }, [shouldScrollToBottom]);
 
