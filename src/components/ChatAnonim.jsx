@@ -9,6 +9,7 @@ function Chat() {
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
   const [userIp, setUserIp] = useState("");
   const [messageCount, setMessageCount] = useState(0);
+  const [user, setUser] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -24,6 +25,20 @@ function Chat() {
       return [];
     }
   };
+
+  useEffect(() => {
+    // Get current user from Supabase auth
+    const getUser = async () => {
+      const { data, error } = await auth.getUser();
+      if (error) {
+        console.error("Error getting user:", error);
+        setUser(null);
+      } else {
+        setUser(data.user);
+      }
+    };
+    getUser();
+  }, []);
 
   useEffect(() => {
     // Memuat pesan dari Supabase dan mengatur langganan untuk memantau perubahan
@@ -142,7 +157,7 @@ function Chat() {
         return;
       }
 
-      const senderImageURL = auth.user()?.user_metadata?.avatar_url || "/AnonimUser.png";
+      const senderImageURL = user?.user_metadata?.avatar_url || "/AnonimUser.png";
       const trimmedMessage = message.trim().substring(0, 60);
       const userIpAddress = userIp;
 
